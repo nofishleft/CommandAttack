@@ -206,7 +206,7 @@ public final class CommandAttack extends JavaPlugin implements Listener {
 			storage.commands.put(material, new ItemCommand(storage.commandNum, template, sudoRequired));
 			storage.commandNum++;
 
-			storage.createConfigEntry(template, material, sudoRequired);
+			storage.createConfigEntry(this, template, material, sudoRequired);
 		} catch (Exception e) {
 			msg(sender, "Error: '" + e.getMessage() + "'");
 			return false;

@@ -6,8 +6,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 public class CAStorage {
 	int commandNum = 0;
@@ -15,17 +13,15 @@ public class CAStorage {
 
 	YamlConfiguration data;
 
-	public void addCommand() {
-
-	}
-
 	public void removeConfigEntry(Material material) {
 		data.set(material.toString(), null);
 	}
 
-	public void createConfigEntry(String template, Material material, boolean sudoRequired) {
+	public void createConfigEntry(CommandAttack plugin, String template, Material material, boolean sudoRequired) {
 		data.set(material.toString() + ".template" , template);
 		data.set(material.toString() + ".sudo" , sudoRequired);
+
+		saveData(plugin);
 	}
 
 	public void loadData(CommandAttack plugin) {
