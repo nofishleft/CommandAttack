@@ -1,0 +1,51 @@
+name: CommandAttack
+version: @version@
+main: nz.rishaan.commandattack.CommandAttack
+api-version: 1.16
+authors: [ github_nofishleft ]
+
+commands:
+  ca:
+    description: Create a CommandAttack bound to the item in your hand
+    permission: ca.create
+    usage: "
+      Usage: /ca <command> [arguments] <all: yes/y/true/t/no/n/false/f>\n
+      Example: /ca give {attacker} diamond 1 yes\n
+      Example: /ca give {target} dirt 5 no\n"
+  careload:
+    description: Reload config changes
+    permission: ca.reload
+    usage: "Usage: /careload"
+  caremove:
+    description: Remove a CommandAttack
+    permission: ca.remove
+    usage: "Usage: /caremove <id>"
+  calist:
+    description: List the CommandAttack bound to the iteam in your hand
+    permission: ca.list
+    usage: "Usage: /calist"
+
+permissions:
+  ca.*:
+    description: Gives access to all CommandAttack commands.
+    children:
+      ca.create: true
+      ca.reload: true
+      ca.remove: true
+      ca.list: true
+      ca.sudo: true
+  ca.create:
+    description: Allows you to create CommandAttack's
+    default: op
+  ca.reload:
+    description: Allows you to reload config changes
+    default: op
+  ca.remove:
+    description: Allows you to remove CommandAttack's
+    default: op
+  ca.list:
+    description: Allows you to list CommandAttack's
+    default: op
+  ca.sudo:
+    description: Allows you to use Sudo CommandAttack's
+    default: op
