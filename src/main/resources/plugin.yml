@@ -8,10 +8,7 @@ commands:
   ca:
     description: Create a CommandAttack bound to the item in your hand
     permission: ca.create
-    usage: "
-      Usage: /ca <command> [arguments] <all: yes/y/true/t/no/n/false/f>\n
-      Example: /ca give {attacker} diamond 1 yes\n
-      Example: /ca give {target} dirt 5 no\n"
+    usage: "Usage: /ca <command_to_bind> [arguments] <sudo_required>"
   careload:
     description: Reload config changes
     permission: ca.reload
