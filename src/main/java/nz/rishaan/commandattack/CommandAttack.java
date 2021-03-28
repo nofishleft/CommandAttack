@@ -1,8 +1,9 @@
 package nz.rishaan.commandattack;
 
 import nz.rishaan.commandattack.util.ArraySlice;
+import nz.rishaan.commandattack.util.InvalidPlaceholderException;
+import nz.rishaan.commandattack.util.MismatchedBraceException;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -10,23 +11,28 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
+import java.text.MessageFormat;
 import java.util.Map;
 
 public final class CommandAttack extends JavaPlugin implements Listener {
 
-	String m_prefix = ChatColor.GOLD + "[CA] ";
-	String SUDO_PERMISSION = "ca.sudo";
+	final String SUDO_PERMISSION = "ca.sudo";
+	final String CREATE_PERMISSION = "ca.create";
+	final String LIST_PERMISSION = "ca.list";
+	final String REMOVE_PERMISSION = "ca.remove";
+	final String RELOAD_PERMISSION = "ca.reload";
+
 	CAStorage storage = new CAStorage();
+	Config cnf = new Config();
 
 	@Override
 	public void onEnable() {
 		// Plugin startup logic
 		Bukkit.getServer().getPluginManager().registerEvents(this, this);
 		storage.loadData(this);
+		cnf.loadConfig(this.getConfig());
 	}
 
 	@Override
@@ -70,53 +76,58 @@ public final class CommandAttack extends JavaPlugin implements Listener {
 	}
 
 	public void msg(CommandSender sender, String message) {
-		sender.sendMessage(m_prefix + message);
+		sender.sendMessage(message);
+	}
+
+	public void msg(CommandSender sender, String format, Object ... args) {
+		sender.sendMessage(MessageFormat.format(format, args));
 	}
 
 	public boolean processCommand_calist(CommandSender sender, String[] args) {
 		if (sender instanceof Player) {
 			Player p = (Player) sender;
-			if (p.hasPermission("ca.list")) {
+			if (p.hasPermission(LIST_PERMISSION)) {
 				if (args.length != 0) {
-					msg(sender, "Found " + args.length + " arguments, but was expecting none, ignoring arguments.");
+					msg(sender, cnf.common_argLengthMismatch_Ignoring, args.length, 0);
 				}
 
 				Material m = p.getInventory().getItemInMainHand().getType();
 				ItemCommand cmd = storage.commands.getOrDefault(m, null);
 
 				if (cmd == null) {
-					msg(sender, "No commands for item '" + m.toString() + "'");
+					msg(sender, cnf.calist_noCommandsForItem, m);
 				} else {
-					msg(sender, "Found command for item '" + m.toString() + "':\n" + "ID: " + ChatColor.DARK_GREEN + cmd.m_id + ChatColor.GOLD + "\nCommand: " + ChatColor.DARK_GREEN + cmd.template);
+					msg(sender, cnf.calist_foundCommandForItem, m, cmd.m_id, cmd.template);
 				}
 				return true;
 			} else {
-				msg(sender, "You don't have permission for that command.");
+				msg(sender, cnf.common_noPermission);
 				return false;
 			}
 		} else {
-			msg(sender, "You need to be a player to use this command.");
+			msg(sender, cnf.common_notPlayer);
 			return false;
 		}
 	}
 
 	public boolean processCommand_careload(CommandSender sender, String[] args) {
-		if (sender instanceof Player && !sender.hasPermission("ca.reload")) {
-			msg(sender, "You don't have permission for that command.");
+
+		if (sender instanceof Player && !sender.hasPermission(RELOAD_PERMISSION)) {
+			msg(sender, cnf.common_noPermission);
 			return false;
 		} else {
 			if (args.length != 0) {
-				msg(sender, "Found " + args.length + " arguments, but was expecting none, ignoring arguments.");
+				msg(sender, cnf.common_argLengthMismatch_Ignoring, args.length, 0);
 			}
 
-			msg(sender, "Not yet implemented!");
+			msg(sender, cnf.common_notImplemented);
 			return true;
 		}
 	}
 
 	public boolean processCommand_caremove(CommandSender sender, String[] args) {
-		if (sender instanceof Player && !sender.hasPermission("ca.remove")) {
-			msg(sender, "You don't have permission for that command.");
+		if (sender instanceof Player && !sender.hasPermission(REMOVE_PERMISSION)) {
+			msg(sender, cnf.common_noPermission);
 			return false;
 		}
 
@@ -126,7 +137,7 @@ public final class CommandAttack extends JavaPlugin implements Listener {
 				id = Integer.parseInt(args[0]);
 				System.out.println("ID: " + id);
 			} catch (NumberFormatException e) {
-				msg(sender, "Invalid id '" + ChatColor.DARK_GREEN + args[0] + ChatColor.GOLD + "'");
+				msg(sender, cnf.caremove_invalidID, args[0]);
 				return false;
 			}
 
@@ -144,24 +155,24 @@ public final class CommandAttack extends JavaPlugin implements Listener {
 				}
 			}
 			if (material == null) {
-				msg(sender, "Couldn't find a command with id '" + id + "'");
+				msg(sender, cnf.caremove_couldntFindCommand, id);
 				return false;
 			}
 
 			storage.commands.remove(material);
 			storage.removeConfigEntry(material);
-			msg(sender, "Removed successfully:\n" + ChatColor.GOLD + "ID: " + ChatColor.DARK_GREEN + id + "\n" + ChatColor.GOLD + "Command: " + ChatColor.DARK_GREEN + template);
+			msg(sender, cnf.caremove_success, material, id, template);
 			return true;
 
 		} else {
-			msg(sender, "Found " + args.length + " arguments, but was expecting 1.");
+			msg(sender, cnf.common_argLengthMismatch, args.length, 1);
 			return false;
 		}
 	}
 
 	public boolean processCommand_ca(CommandSender sender, String[] args) {
 		if (args.length < 2) {
-			msg(sender, "Found " + args.length + " arguments, but was expecting at least 2.");
+			msg(sender, cnf.common_argLengthMin, args.length, 2);
 			return false;
 		}
 
@@ -183,18 +194,17 @@ public final class CommandAttack extends JavaPlugin implements Listener {
 				sudoRequired = false;
 				break;
 			default:
-				msg(sender, "Invalid argument '" + sudoRequired_s
-						+ "', was expecting one of [yes,y,true,t,no,n,false,f]");
+				msg(sender, cnf.ca_invalidBoolean, sudoRequired_s);
 				return false;
 		}
 
 		if (!(sender instanceof Player)) {
-			msg(sender, "You need to be a player, holding an item to use this command");
+			msg(sender, cnf.common_notPlayer);
 			return false;
 		}
 
-		if (!sender.hasPermission("ca.create")) {
-			msg(sender, "You don't have permission to use this command.");
+		if (!sender.hasPermission(CREATE_PERMISSION)) {
+			msg(sender, cnf.common_noPermission);
 			return false;
 		}
 
@@ -207,8 +217,13 @@ public final class CommandAttack extends JavaPlugin implements Listener {
 			storage.commandNum++;
 
 			storage.createConfigEntry(this, template, material, sudoRequired);
-		} catch (Exception e) {
-			msg(sender, "Error: '" + e.getMessage() + "'");
+
+			msg(sender, cnf.ca_success);
+		} catch (InvalidPlaceholderException e) {
+			msg(sender, cnf.ca_templateInvalidPlaceholder, e.placeholder);
+			return false;
+		} catch (MismatchedBraceException e) {
+			msg(sender, cnf.ca_templateMismatchedBraces);
 			return false;
 		}
 

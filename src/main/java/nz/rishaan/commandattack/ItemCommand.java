@@ -1,6 +1,7 @@
 package nz.rishaan.commandattack;
 
-import org.bukkit.Material;
+import nz.rishaan.commandattack.util.InvalidPlaceholderException;
+import nz.rishaan.commandattack.util.MismatchedBraceException;
 
 import java.util.ArrayList;
 
@@ -10,7 +11,7 @@ public class ItemCommand {
 	private Part[] m_parts = {};
 	public String template;
 
-	public ItemCommand(int id, String template, boolean sudoRequired) throws Exception {
+	public ItemCommand(int id, String template, boolean sudoRequired) throws MismatchedBraceException, InvalidPlaceholderException {
 		this.template = template;
 
 		m_id = id;
@@ -23,7 +24,7 @@ public class ItemCommand {
 			s = template.indexOf("{", s + 1);
 			e = template.indexOf("}", e + 1);
 
-			if (s == -1 ^ e == -1 || e < s) throw new Exception("Invalid template string: Mismatched braces");
+			if (s == -1 ^ e == -1 || e < s) throw new MismatchedBraceException();
 
 			// If no more placeholders
 			if (s == -1) {
@@ -39,7 +40,13 @@ public class ItemCommand {
 				parts.add(new StaticPart(template.substring(p, s)));
 			}
 
-			parts.add(new DynamicPart(Placeholder.valueOf(template.substring(s + 1, e))));
+			String placeholder = template.substring(s + 1, e);
+
+			try {
+				parts.add(new DynamicPart(Placeholder.valueOf(placeholder)));
+			} catch (IllegalArgumentException ex) {
+				throw new InvalidPlaceholderException(placeholder);
+			}
 
 			p = e + 1;
 		}
